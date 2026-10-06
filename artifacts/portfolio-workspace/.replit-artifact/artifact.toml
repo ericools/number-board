@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Portfolio Workspace"
+description = "A visual finance workspace for tracking assets and budgets with linked quantity and calculation tiles, saved workspaces, and simple allocation charts."
+version = "1.0.0"
+id = "artifacts/portfolio-workspace"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20008
+
+[services.development]
+run = "pnpm --filter @workspace/portfolio-workspace run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/portfolio-workspace", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/portfolio-workspace/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20008"
+BASE_PATH = "/"

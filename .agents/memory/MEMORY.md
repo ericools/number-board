@@ -1,0 +1,4 @@
+- [Product requirements](product-requirements.md) — Linux/AppImage delivery target and the user's asset-universe requirements for pricing integrations.
+- [Legacy workspace data](legacy-workspace-data.md) — old saves carry stale total/interest inputs; never let them act as hidden inputs after unlinking.
+- [Price feeds](price-feeds.md) — CoinCodex v1 endpoint/CORS quirks, ticker fields, logo URLs; Finnhub key stays server-side.
+- [Desktop AppImage](desktop-appimage.md) — Electron build: user-entered Finnhub key, app:// origin, how to run the packaged app headless here for debugging.

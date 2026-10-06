@@ -1,0 +1,17 @@
+{
+  "name": "@workspace/desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Number Board \u2014 linked-tile investment and budget workspace",
+  "author": "Number Board",
+  "main": "app/main.cjs",
+  "scripts": {
+    "appimage": "node ./build.mjs"
+  },
+  "desktopName": "number-board.desktop",
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
+    "esbuild": "0.28.2"
+  }
+}

@@ -1,0 +1,18 @@
+---
+name: Desktop AppImage
+description: Decisions and quirks for the Electron/AppImage build of Ledgerly.
+---
+- The user chose to enter the Finnhub key inside the desktop app rather than embedding it in the AppImage. **Why:** the file can be shared without leaking the key. **How to apply:** never bake secrets into the desktop bundle.
+- Use a custom `app://` scheme, not a localhost port: localStorage is per-origin, so a random port would lose saved workspaces on each launch.
+- The settings endpoint is handled in the protocol handler, not the loopback HTTP server, so other local programs can't change the key.
+- pino is replaced by a console shim when bundling the API routes into Electron (pino transports use worker threads).
+- The packaged app CAN run here headless for renderer debugging: copy `release/linux-unpacked` to /tmp, byte-patch the ELF interpreter `/lib64/ld-linux-x86-64.so.2` in `ledgerly-bin` to a short symlink (e.g. /tmp/ld.so) pointing at the Nix glibc loader that Chromium uses, set LD_LIBRARY_PATH to that glibc + the lib dirs from `ldd` of the chromium-unwrapped binary + gtk+3/lib, then run with `--no-sandbox --ozone-platform=headless --remote-debugging-port=9333` and drive it over CDP. Launch it as a background task (it dies with a normal shell call). Plain LD_LIBRARY_PATH without the loader swap fails (glibc mismatch).
+- Renderer console errors are forwarded to the terminal and the crash screen shows the error + stack; the desktop build emits hidden sourcemaps (copied to `release/sourcemaps/`) to decode minified stacks.
+- The user's machine is Ubuntu 24.04-based (likely Mint). AppArmor half-blocks Chromium's sandbox there: `unshare -Ur true` passes, so electron-builder's AppRun doesn't add `--no-sandbox`, but file calls fail with ESRCH ("No such process"). The packaged launcher passes `--no-sandbox` unconditionally. Setting it from main.js is too late.
+- Large binary delivery: asset attachments have a 100 MiB upload limit. For larger AppImages, a verified Vite development `/@fs/` URL can serve the existing file directly.
+  **Why:** the user wants the original package downloaded, not altered to meet attachment limits; the new workspace UI does not match the documented file-tree navigation.
+  **How to apply:** verify the URL returns the actual binary size before sharing; never persist a development hostname, and explain that the link depends on the preview server running.
+- Desktop data lives in `~/.ledgerly` (user's request, after a launch failure on their machine).
+- Moving shared memory to /tmp with `--disable-dev-shm-usage` did NOT fix that machine; the same ESRCH appeared in /tmp, so the cause was the sandbox, not /dev/shm. Launcher flags live in a wrapper script added at packaging time.
+- On the user's Linux Mint, scrollbars take up layout space; in headless test browsers here they don't. Layout bugs that depend on scrollbars (e.g. measure → resize → scrollbar toggles → re-measure loops) only show up on the user's machine. To reproduce one, inject `.canvas-wrap::-webkit-scrollbar{width:15px;height:15px}` and give the board a fractional pixel size.
+- Never size the board from a measured viewport (clientWidth/Height fed back into React state). Even with a 2px margin it still looped on the user's machine (React #185 after dropping a tile at the edge). **Why:** scrollbars there take up space, so measurement and layout keep changing each other. **How to apply:** the board size comes only from the tile positions, and CSS `min-width/min-height: 100%` fills the view. Any state set in a layout effect must not change the layout.
